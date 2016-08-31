@@ -28,7 +28,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define ELF_LOAD(phdr, phnum, elf_start, self)   \
+#define ELF_LOAD(phdr, phnum, elf_start)   \
 do {                                             \
     int i;                                       \
     for(i=0; i < phnum; i++) {                   \
@@ -40,7 +40,6 @@ do {                                             \
         if(!phdr[i].p_filesz)                    \
             return -EINVAL;                      \
         r = doLoad(                              \
-            self,                                \
             phdr[i].p_paddr,                     \
             (char*)elf_start + phdr[i].p_offset, \
             phdr[i].p_filesz);                   \
@@ -54,26 +53,23 @@ int
 elf32_load(
     Elf32_Phdr *phdr,
     int phnum,
-    void *elf_start,
-    void *self)
+    void *elf_start)
 {
-    ELF_LOAD(phdr, phnum, elf_start, self);
+    ELF_LOAD(phdr, phnum, elf_start);
 }
 
 int
 elf64_load(
     Elf64_Phdr *phdr,
     int phnum,
-    void *elf_start,
-    void *self)
+    void *elf_start)
 {
-    ELF_LOAD(phdr, phnum, elf_start, self);
+    ELF_LOAD(phdr, phnum, elf_start);
 }
 
 long long
 elf_load(
     char *elf_start,
-    void *self,
     int *is_64bit)
 {
     Elf32_Ehdr *hdr32 = (Elf32_Ehdr*)elf_start;
@@ -89,8 +85,7 @@ elf_load(
         int r = elf32_load(
             (Elf32_Phdr *)(elf_start + hdr32->e_phoff),
             hdr32->e_phnum,
-            elf_start,
-            self);
+            elf_start);
         if (r<0)
             return r;
         *is_64bit = 0;
@@ -100,8 +95,7 @@ elf_load(
         int r = elf64_load(
             (Elf64_Phdr *)(elf_start + hdr64->e_phoff),
             hdr64->e_phnum,
-            elf_start,
-            self);
+            elf_start);
         if (r<0)
             return r;
         *is_64bit = 1;

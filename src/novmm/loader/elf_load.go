@@ -28,14 +28,20 @@ import (
 	"unsafe"
 )
 
+// This is not a concurrent function. Do not pass
+// a Go struct with pointers to Go struct to cgo.
+// Instead save it here.
+var (
+	self *machine.Model = nil
+)
+
 //export doLoad
 func doLoad(
-	self unsafe.Pointer,
 	offset C.size_t,
 	source unsafe.Pointer,
 	length C.size_t) C.int {
 
-	model := (*machine.Model)(self)
+	model := self
 
 	// Bump up the size to the end of the page.
 	new_length := platform.Align(uint64(length), platform.PageSize, true)
@@ -63,11 +69,12 @@ func ElfLoad(
 	data []byte,
 	model *machine.Model) (uint64, bool, error) {
 
+	self = model
+
 	// Do the load.
 	var is_64bit C.int
 	entry_point := C.elf_load(
 		unsafe.Pointer(&data[0]),
-		unsafe.Pointer(model),
 		&is_64bit)
 	if entry_point < 0 {
 		return 0, false, syscall.Errno(-entry_point)
